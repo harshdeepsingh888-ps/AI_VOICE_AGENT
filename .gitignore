@@ -9,6 +9,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Generated audio files
+recording.wav
+response.mp3
+
+# Temporary files
+*.tmp
+
 # VS Code
 .vscode/
 
