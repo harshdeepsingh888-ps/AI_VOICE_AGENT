@@ -20,7 +20,7 @@ class Recorder:
         self.recording = False
 
         self.silence_frames = 0
-        self.max_silence_frames = 30
+        self.max_silence_frames = 45
 
         print("✅ Recorder initialized")
 
