@@ -22,11 +22,20 @@ class ToolDispatcher:
             "calc",
         ]
 
+        chrome_keywords = [
+            "chrome",
+            "google chrome",
+            "browser",
+        ]
+
         if any(keyword in message for keyword in notepad_keywords):
             return tool_manager.run_tool("notepad")
 
         if any(keyword in message for keyword in calculator_keywords):
             return tool_manager.run_tool("calculator")
+        
+        if any(keyword in message for keyword in chrome_keywords):
+            return tool_manager.run_tool("chrome")
 
         return None
 
