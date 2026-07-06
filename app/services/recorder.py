@@ -2,6 +2,7 @@ import sounddevice as sd
 import numpy as np
 import webrtcvad
 import wave
+from collections import deque
 
 
 class Recorder:
@@ -22,6 +23,10 @@ class Recorder:
         self.silence_frames = 0
         self.max_silence_frames = 45
 
+        # Stores audio just before speech starts
+        self.pre_buffer_frames = 15
+        self.pre_buffer = deque(maxlen=self.pre_buffer_frames)
+
         print("✅ Recorder initialized")
 
     def callback(self, indata, frames, time, status):
@@ -29,11 +34,14 @@ class Recorder:
         if status:
             print(status)
 
-        # Convert microphone data to 16-bit PCM
         pcm = (indata * 32767).astype(np.int16).tobytes()
 
-        # Speech detected
-        if self.vad.is_speech(pcm, self.sample_rate):
+        is_speech = self.vad.is_speech(pcm, self.sample_rate)
+
+        if not self.recording:
+            self.pre_buffer.append(pcm)
+
+        if is_speech:
 
             if not self.recording:
                 print("🟢 Speech detected!")
@@ -41,18 +49,16 @@ class Recorder:
 
                 self.recording = True
 
-            self.frames.append(pcm)
+                # Add audio from just before speech started
+                self.frames.extend(list(self.pre_buffer))
 
-            # Reset silence counter
+            self.frames.append(pcm)
             self.silence_frames = 0
 
-        # Silence detected
         else:
 
             if self.recording:
-
                 self.frames.append(pcm)
-
                 self.silence_frames += 1
 
                 if self.silence_frames >= self.max_silence_frames:
@@ -66,6 +72,7 @@ class Recorder:
         self.frames = []
         self.recording = False
         self.silence_frames = 0
+        self.pre_buffer.clear()
 
         with sd.InputStream(
             samplerate=self.sample_rate,
@@ -85,7 +92,7 @@ class Recorder:
 
         with wave.open(filename, "wb") as wf:
             wf.setnchannels(self.channels)
-            wf.setsampwidth(2)  # int16 = 2 bytes
+            wf.setsampwidth(2)
             wf.setframerate(self.sample_rate)
             wf.writeframes(b"".join(self.frames))
 

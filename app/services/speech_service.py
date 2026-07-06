@@ -12,7 +12,7 @@ recorder = Recorder()
 def transcribe_audio(filename="recording.wav"):
     print("📝 Transcribing...")
 
-    result = model.transcribe(filename)
+    result = model.transcribe(filename, language="en")
 
     print(f"🗣️ You said: {result['text']}")
 

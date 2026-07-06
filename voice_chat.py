@@ -14,7 +14,9 @@ while True:
 
         print(f"\n👤 You: {user_text}")
 
-        if user_text.lower().strip() == "exit":
+        clean_text = user_text.lower().strip()
+
+if "exit" in clean_text or "quit" in clean_text or "stop" in clean_text:
             print("\n👋 Goodbye!")
             break
 
