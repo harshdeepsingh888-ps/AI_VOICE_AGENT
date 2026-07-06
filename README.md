@@ -1,67 +1,42 @@
-# AI Voice Agent
+# 🤖 AI Voice Agent
 
-An AI-powered voice assistant built with FastAPI, Google Gemini, Whisper, and Edge TTS.
+A modular AI-powered voice assistant built with Python, Whisper, Gemini, Edge TTS, FastAPI, and WebRTC Voice Activity Detection.
 
-## Features
+This project is being built step by step with clean architecture, Git versioning, and production-style development practices.
 
-- Speech-to-Text using OpenAI Whisper
-- AI responses using Google Gemini
-- Conversation memory
-- Text-to-Speech using Edge TTS
-- FastAPI backend
-- REST API with Swagger documentation
+---
 
-## Tech Stack
+## 🚀 Current Version
 
-- Python 3.12
-- FastAPI
-- Google Gemini API
-- OpenAI Whisper
-- PyTorch
-- Edge TTS
-- FFmpeg
-- Pygame
+### ✅ v1.1 — Smart Voice Assistant Core
 
-## Project Structure
+The assistant can now:
 
-```
-AI_VOICE_AGENT/
-│
-├── app/
-│   ├── api/
-│   ├── core/
-│   ├── schemas/
-│   └── services/
-│
-├── requirements.txt
-├── README.md
-└── .env
-```
+- Listen through microphone
+- Detect speech automatically using WebRTC VAD
+- Stop recording after silence
+- Convert speech to text using Whisper
+- Generate AI responses using Gemini
+- Maintain conversation memory
+- Speak responses using Edge TTS
 
-## Run the Project
+---
 
-Install dependencies:
+## 🧠 Architecture
 
-```bash
-pip install -r requirements.txt
-```
-
-Start the server:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Open Swagger:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-## Current Status
-
-- ✅ Gemini Integration
-- ✅ Conversation Memory
-- ✅ Whisper Speech-to-Text
-- ✅ Edge Text-to-Speech
-- ✅ FastAPI Backend
+```text
+User Voice
+    ↓
+WebRTC VAD Recorder
+    ↓
+recording.wav
+    ↓
+Whisper Speech-to-Text
+    ↓
+Gemini LLM
+    ↓
+Conversation Memory
+    ↓
+Edge TTS
+    ↓
+Speaker Output

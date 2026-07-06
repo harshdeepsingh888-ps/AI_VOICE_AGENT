@@ -1,7 +1,10 @@
 from google import genai
+import asyncio
+
 from app.core.config import settings
 from app.services.memory_service import memory_service
 from app.services.tts_service import tts_service
+from app.tools.tool_dispatcher import tool_dispatcher
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
@@ -9,6 +12,13 @@ client = genai.Client(api_key=settings.GEMINI_API_KEY)
 class LLMService:
 
     def generate_response(self, session_id: str, message: str):
+
+        # Check if user wants to use a tool
+        tool_result = tool_dispatcher.execute(message)
+
+        if tool_result:
+            asyncio.run(tts_service.text_to_speech(tool_result))
+            return tool_result
 
         # Store user message
         memory_service.add_message(session_id, "user", message)
@@ -37,8 +47,6 @@ class LLMService:
 
         # Save AI response
         memory_service.add_message(session_id, "assistant", ai_text)
-
-        import asyncio
 
         asyncio.run(tts_service.text_to_speech(ai_text))
 
