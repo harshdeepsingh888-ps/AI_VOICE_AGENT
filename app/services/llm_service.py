@@ -13,20 +13,16 @@ class LLMService:
 
     def generate_response(self, session_id: str, message: str):
 
-        # Check if user wants to use a tool
         tool_result = tool_dispatcher.execute(message)
 
         if tool_result:
             asyncio.run(tts_service.text_to_speech(tool_result))
             return tool_result
 
-        # Store user message
         memory_service.add_message(session_id, "user", message)
 
-        # Get conversation history
         history = memory_service.get_history(session_id)
 
-        # Convert history into a prompt
         prompt = ""
 
         for chat in history:
@@ -37,20 +33,30 @@ class LLMService:
 
         prompt += "Assistant:"
 
-        # Call Gemini
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt
+            )
 
-        ai_text = response.text
+            ai_text = response.text
 
-        # Save AI response
-        memory_service.add_message(session_id, "assistant", ai_text)
+            memory_service.add_message(session_id, "assistant", ai_text)
 
-        asyncio.run(tts_service.text_to_speech(ai_text))
+            asyncio.run(tts_service.text_to_speech(ai_text))
 
-        return ai_text
+            return ai_text
+
+        except Exception as e:
+            error_text = str(e)
+
+            if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
+                return "Gemini quota is currently exhausted. Please try again later."
+
+            if "503" in error_text or "UNAVAILABLE" in error_text:
+                return "Gemini is temporarily unavailable. Please try again later."
+
+            return "Sorry, something went wrong while generating a response."
 
 
 llm_service = LLMService()

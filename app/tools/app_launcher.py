@@ -1,24 +1,59 @@
 import subprocess
 
+from app.tools.base_tool import BaseTool
 from app.tools.tool_manager import tool_manager
 
 
-def open_notepad():
-    subprocess.Popen("notepad.exe")
-    return "Notepad opened successfully."
+class NotepadTool(BaseTool):
+    name = "notepad"
+    description = "Opens Windows Notepad."
+
+    keywords = [
+        "notepad",
+        "note pad",
+        "not bad",
+        "north pad",
+        "north bad",
+        "open pad",
+    ]
+
+    def execute(self, user_message: str):
+        subprocess.Popen("notepad.exe")
+        return "Notepad opened successfully."
 
 
-def open_calculator():
-    subprocess.Popen("calc.exe")
-    return "Calculator opened successfully."
+class ChromeTool(BaseTool):
+    name = "chrome"
+    description = "Opens Google Chrome."
 
-def open_chrome():
-    subprocess.Popen(
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-    )
-    return "Chrome opened successfully."
+    keywords = [
+        "chrome",
+        "google chrome",
+        "browser",
+    ]
 
-# Register tools
-tool_manager.register_tool("notepad", open_notepad)
-tool_manager.register_tool("calculator", open_calculator)
-tool_manager.register_tool("chrome", open_chrome)
+    def execute(self, user_message: str):
+        subprocess.Popen(
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+        )
+        return "Chrome opened successfully."
+
+
+class WindowsCalculatorTool(BaseTool):
+    name = "calculator"
+    description = "Opens Windows Calculator."
+
+    keywords = [
+        "open calculator",
+        "launch calculator",
+        "calculator app",
+    ]
+
+    def execute(self, user_message: str):
+        subprocess.Popen("calc.exe")
+        return "Calculator opened successfully."
+
+
+tool_manager.register_tool(NotepadTool())
+tool_manager.register_tool(ChromeTool())
+tool_manager.register_tool(WindowsCalculatorTool())

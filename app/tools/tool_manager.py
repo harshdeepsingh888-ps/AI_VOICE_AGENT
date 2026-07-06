@@ -1,16 +1,21 @@
+from app.tools.tool_registry import ToolRegistry
+from app.tools.base_tool import BaseTool
+
+
 class ToolManager:
-
     def __init__(self):
-        self.tools = {}
+        self.registry = ToolRegistry()
 
-    def register_tool(self, name, function):
-        self.tools[name] = function
+    def register_tool(self, tool: BaseTool) -> None:
+        self.registry.register(tool)
 
-    def run_tool(self, name, *args, **kwargs):
-        if name not in self.tools:
-            return f"Tool '{name}' not found."
+    def execute(self, user_message: str):
+        tool = self.registry.find_matching_tool(user_message)
 
-        return self.tools[name](*args, **kwargs)
+        if tool is None:
+            return None
+
+        return tool.execute(user_message)
 
 
 tool_manager = ToolManager()
