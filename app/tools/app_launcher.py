@@ -40,8 +40,8 @@ class ChromeTool(BaseTool):
 
 
 class WindowsCalculatorTool(BaseTool):
-    name = "calculator"
-    description = "Opens Windows Calculator."
+    name = "windows_calculator"
+    description = "Opens the Windows Calculator application."
 
     keywords = [
         "open calculator",
