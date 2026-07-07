@@ -1,5 +1,7 @@
-from app.tools.tool_registry import ToolRegistry
+import time
+
 from app.tools.base_tool import BaseTool
+from app.tools.tool_registry import ToolRegistry
 
 
 class ToolManager:
@@ -15,7 +17,19 @@ class ToolManager:
         if tool is None:
             return None
 
-        return tool.execute(user_message)
+        start_time = time.perf_counter()
+
+        result = tool.execute(user_message)
+
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+
+        print(
+            f"[Tool] {tool.name} | "
+            f"Input: {user_message} | "
+            f"Time: {elapsed_ms:.2f} ms"
+        )
+
+        return result
 
 
 tool_manager = ToolManager()

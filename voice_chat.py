@@ -1,6 +1,10 @@
 from app.services.speech_service import listen
 from app.services.llm_service import llm_service
-from app.tools import app_launcher, calculator_tool
+from app.tools import (
+    app_launcher,
+    calculator_tool,
+    weather_tool,
+)
 from app.tools.tool_dispatcher import tool_dispatcher
 from app.services.speech_normalizer import speech_normalizer
 
