@@ -46,3 +46,17 @@ def test_find_matching_tool():
     registry.register(tool)
 
     assert registry.find_matching_tool("run dummy tool") == tool
+
+
+def test_get_tool_metadata():
+    registry = ToolRegistry()
+    tool = DummyTool()
+
+    registry.register(tool)
+
+    metadata = registry.get_tool_metadata()
+
+    assert metadata[0]["name"] == "dummy"
+    assert metadata[0]["description"] == "Dummy test tool."
+    assert metadata[0]["version"] == "1.0.0"
+    assert metadata[0]["enabled"] is True
