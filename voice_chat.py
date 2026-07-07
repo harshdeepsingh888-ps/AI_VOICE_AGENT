@@ -2,6 +2,7 @@ from app.services.speech_service import listen
 from app.services.llm_service import llm_service
 from app.tools import app_launcher, calculator_tool
 from app.tools.tool_dispatcher import tool_dispatcher
+from app.services.speech_normalizer import speech_normalizer
 
 print("=" * 50)
 print("AI Voice Agent Started")
@@ -28,7 +29,11 @@ while True:
 
         print("\nThinking...")
 
-        tool_response = tool_dispatcher.execute(user_text)
+        normalized_text = speech_normalizer.normalize(user_text)
+
+        print(f"Normalized: {normalized_text}")
+
+        tool_response = tool_dispatcher.execute(normalized_text)
 
         if tool_response:
             print(f"\nTool: {tool_response}\n")
@@ -48,3 +53,4 @@ while True:
     except Exception as e:
         print(f"\nError: {e}")
         print("Continuing...\n")
+        
