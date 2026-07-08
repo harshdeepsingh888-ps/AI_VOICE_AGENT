@@ -1,6 +1,10 @@
 from app.services.llm_service import llm_service
 from app.tools.tool_manager import tool_manager
 from app.tools.tool_dispatcher import tool_dispatcher
+from app.utils.logger import setup_logger
+
+
+logger = setup_logger("agent_service")
 
 
 class AgentService:
@@ -8,25 +12,34 @@ class AgentService:
         self.pending_requests = {}
 
     def process(self, session_id: str, message: str):
+        logger.info(f"Processing message: {message}")
+
         pending_tool = self.pending_requests.get(session_id)
 
         if pending_tool == "weather":
+            logger.info("Pending weather request found")
+
             weather_tool = tool_manager.registry.get_tool("weather")
 
             if weather_tool:
                 result = weather_tool.execute(f"weather in {message}")
 
                 if "Sorry, I could not fetch the weather" not in result:
+                    logger.info("Pending weather request completed")
                     self.pending_requests.pop(session_id, None)
+                else:
+                    logger.warning("Weather request failed, keeping pending state")
 
                 return result
 
         plan = llm_service.plan_tool_usage(message)
 
         if plan.error:
-            print(f"[Agent] Planner failed: {plan.error}")
+            logger.warning(f"Planner failed: {plan.error}")
 
         if plan.use_tool and plan.tool_name:
+            logger.info(f"Planner selected tool: {plan.tool_name}")
+
             tool = tool_manager.registry.get_tool(plan.tool_name)
 
             if tool:
@@ -34,19 +47,25 @@ class AgentService:
                 result = tool.execute(user_message)
 
                 if result == "Please tell me the city name.":
+                    logger.info(f"Tool needs follow-up: {plan.tool_name}")
                     self.pending_requests[session_id] = plan.tool_name
 
                 return result
 
-            print(f"[Agent] Invalid tool from planner: {plan.tool_name}")
+            logger.warning(f"Invalid tool from planner: {plan.tool_name}")
+
+        logger.info("Trying keyword dispatcher fallback")
 
         tool_response = tool_dispatcher.execute(message)
 
         if tool_response:
             if tool_response == "Please tell me the city name.":
+                logger.info("Weather tool needs follow-up")
                 self.pending_requests[session_id] = "weather"
 
             return tool_response
+
+        logger.info("Falling back to conversational LLM")
 
         return llm_service.generate_response(
             session_id=session_id,

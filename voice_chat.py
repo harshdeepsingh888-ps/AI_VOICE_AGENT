@@ -6,11 +6,15 @@ from app.tools import (
     calculator_tool,
     weather_tool,
 )
+from app.utils.logger import setup_logger
 
-print("=" * 50)
-print("AI Voice Agent Started")
-print("Say 'exit' to quit.")
-print("=" * 50)
+
+logger = setup_logger("voice_chat")
+
+logger.info("=" * 50)
+logger.info("AI Voice Agent Started")
+logger.info("Say 'exit' to quit.")
+logger.info("=" * 50)
 
 session_id = "voice_session"
 
@@ -18,34 +22,32 @@ while True:
     try:
         user_text = listen()
 
-        print(f"\nYou: {user_text}")
+        logger.info(f"[Speech] User: {user_text}")
 
         clean_text = user_text.lower().strip()
 
         if not clean_text:
-            print("\nNo speech detected. Listening again...")
+            logger.info("[System] No speech detected. Listening again.")
             continue
 
         if "exit" in clean_text or "quit" in clean_text or "stop" in clean_text:
-            print("\nGoodbye!")
+            logger.info("[System] Goodbye!")
             break
 
-        print("\nThinking...")
-
         normalized_text = speech_normalizer.normalize(user_text)
-        print(f"Normalized: {normalized_text}")
+        logger.info(f"[Normalizer] Normalized: {normalized_text}")
 
         response = agent_service.process(
             session_id=session_id,
             message=normalized_text,
         )
 
-        print(f"\nAI: {response}\n")
+        logger.info(f"[Response] {response}")
 
     except KeyboardInterrupt:
-        print("\n\nAI Voice Agent stopped.")
+        logger.info("[System] AI Voice Agent stopped.")
         break
 
     except Exception as e:
-        print(f"\nError: {e}")
-        print("Continuing...\n")
+        logger.error(f"[Error] {e}")
+        logger.info("[System] Continuing...")
