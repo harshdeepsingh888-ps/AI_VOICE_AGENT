@@ -1,12 +1,11 @@
 from app.services.speech_service import listen
-from app.services.llm_service import llm_service
+from app.services.speech_normalizer import speech_normalizer
+from app.services.agent_service import agent_service
 from app.tools import (
     app_launcher,
     calculator_tool,
     weather_tool,
 )
-from app.tools.tool_dispatcher import tool_dispatcher
-from app.services.speech_normalizer import speech_normalizer
 
 print("=" * 50)
 print("AI Voice Agent Started")
@@ -34,21 +33,14 @@ while True:
         print("\nThinking...")
 
         normalized_text = speech_normalizer.normalize(user_text)
-
         print(f"Normalized: {normalized_text}")
 
-        tool_response = tool_dispatcher.execute(normalized_text)
-
-        if tool_response:
-            print(f"\nTool: {tool_response}\n")
-            continue
-
-        ai_response = llm_service.generate_response(
+        response = agent_service.process(
             session_id=session_id,
-            message=user_text,
+            message=normalized_text,
         )
 
-        print(f"\nAI: {ai_response}\n")
+        print(f"\nAI: {response}\n")
 
     except KeyboardInterrupt:
         print("\n\nAI Voice Agent stopped.")
@@ -57,4 +49,3 @@ while True:
     except Exception as e:
         print(f"\nError: {e}")
         print("Continuing...\n")
-        
