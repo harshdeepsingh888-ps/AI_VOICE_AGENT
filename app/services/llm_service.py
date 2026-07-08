@@ -32,6 +32,8 @@ class LLMService:
         return context
 
     def plan_tool_usage(self, message: str) -> ToolPlan:
+        available_tool_names = tool_manager.registry.list_tool_names()
+
         prompt = f"""
 You are a tool planning system.
 
@@ -42,16 +44,22 @@ Your job is to decide whether the user's message needs a tool.
 Return only valid JSON.
 
 Rules:
-- If a tool is needed, return:
+- You must choose tool_name only from this list:
+{available_tool_names}
+
+- Do not invent tool names.
+- If no listed tool is suitable, return use_tool false.
+
+If a tool is needed, return:
 {{
   "use_tool": true,
-  "tool_name": "tool_name_here",
+  "tool_name": "exact_tool_name_from_list",
   "arguments": {{
     "user_message": "original user message here"
   }}
 }}
 
-- If no tool is needed, return:
+If no tool is needed, return:
 {{
   "use_tool": false,
   "tool_name": null,
@@ -67,21 +75,32 @@ User message:
                 model="gemini-2.5-flash",
                 contents=prompt
             )
-            print("RAW PLANNER RESPONSE:", response.text)
 
             raw_text = response.text.strip()
 
             if raw_text.startswith("```json"):
-                 raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+                raw_text = raw_text.replace("```json", "").replace("```", "").strip()
             elif raw_text.startswith("```"):
-                 raw_text = raw_text.replace("```", "").strip()
+                raw_text = raw_text.replace("```", "").strip()
 
             data = json.loads(raw_text)
 
+            use_tool = data.get("use_tool", False)
+            tool_name = data.get("tool_name")
+            arguments = data.get("arguments", {})
+
+            if use_tool and tool_name not in available_tool_names:
+                return ToolPlan(
+                    use_tool=False,
+                    tool_name=None,
+                    arguments={},
+                    error=f"Invalid tool selected by planner: {tool_name}",
+                )
+
             return ToolPlan(
-                use_tool=data.get("use_tool", False),
-                tool_name=data.get("tool_name"),
-                arguments=data.get("arguments", {}),
+                use_tool=use_tool,
+                tool_name=tool_name,
+                arguments=arguments,
             )
 
         except Exception as e:
