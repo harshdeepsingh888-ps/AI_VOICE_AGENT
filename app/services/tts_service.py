@@ -1,27 +1,52 @@
 import asyncio
+
 import edge_tts
 import pygame
+
+from app.utils.logger import setup_logger
+
+
+logger = setup_logger("tts_service")
 
 
 class TTSService:
     def __init__(self):
         self.voice = "en-US-GuyNeural"
-        pygame.mixer.init()
 
-    async def text_to_speech(self, text):
+        logger.info("Initializing pygame mixer...")
+        pygame.mixer.init()
+        logger.info("TTS service initialized.")
+
+    async def text_to_speech(self, text: str):
         output_file = "response.mp3"
 
-        communicate = edge_tts.Communicate(text, self.voice)
-        await communicate.save(output_file)
+        logger.info("Generating speech...")
 
-        pygame.mixer.music.load(output_file)
-        pygame.mixer.music.play()
+        try:
+            communicate = edge_tts.Communicate(
+                text=text,
+                voice=self.voice,
+            )
 
-        while pygame.mixer.music.get_busy():
-            await asyncio.sleep(0.1)
+            await communicate.save(output_file)
 
-        # Release the file after playback
-        pygame.mixer.music.unload()
+            logger.info("Speech generated successfully.")
+
+            pygame.mixer.music.load(output_file)
+            pygame.mixer.music.play()
+
+            logger.info("Playing audio response...")
+
+            while pygame.mixer.music.get_busy():
+                await asyncio.sleep(0.1)
+
+            pygame.mixer.music.unload()
+
+            logger.info("Audio playback completed.")
+
+        except Exception:
+            logger.exception("TTS generation failed.")
+            raise
 
 
 tts_service = TTSService()

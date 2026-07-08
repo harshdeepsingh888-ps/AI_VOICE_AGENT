@@ -1,12 +1,17 @@
-from google import genai
 import asyncio
 import json
+
+from google import genai
 
 from app.core.config import settings
 from app.schemas.tool_plan import ToolPlan
 from app.services.memory_service import memory_service
 from app.services.tts_service import tts_service
 from app.tools.tool_manager import tool_manager
+from app.utils.logger import setup_logger
+
+
+logger = setup_logger("llm_service")
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
@@ -71,15 +76,21 @@ User message:
 """
 
         try:
+            logger.info("Planning tool usage")
+
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
+                model=settings.GEMINI_MODEL,
+                contents=prompt,
             )
 
             raw_text = response.text.strip()
 
             if raw_text.startswith("```json"):
-                raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+                raw_text = (
+                    raw_text.replace("```json", "")
+                    .replace("```", "")
+                    .strip()
+                )
             elif raw_text.startswith("```"):
                 raw_text = raw_text.replace("```", "").strip()
 
@@ -90,12 +101,21 @@ User message:
             arguments = data.get("arguments", {})
 
             if use_tool and tool_name not in available_tool_names:
+                logger.warning(
+                    f"Planner selected invalid tool: {tool_name}"
+                )
+
                 return ToolPlan(
                     use_tool=False,
                     tool_name=None,
                     arguments={},
                     error=f"Invalid tool selected by planner: {tool_name}",
                 )
+
+            if use_tool:
+                logger.info(f"Planner selected tool: {tool_name}")
+            else:
+                logger.info("Planner decided no tool is required")
 
             return ToolPlan(
                 use_tool=use_tool,
@@ -104,6 +124,8 @@ User message:
             )
 
         except Exception as e:
+            logger.error(f"Planner failed: {e}")
+
             return ToolPlan(
                 use_tool=False,
                 tool_name=None,
@@ -112,6 +134,8 @@ User message:
             )
 
     def generate_response(self, session_id: str, message: str):
+        logger.info("Generating conversational response")
+
         memory_service.add_message(session_id, "user", message)
 
         history = memory_service.get_history(session_id)
@@ -129,26 +153,46 @@ User message:
 
         try:
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
+                model=settings.GEMINI_MODEL,
+                contents=prompt,
             )
 
             ai_text = response.text
 
-            memory_service.add_message(session_id, "assistant", ai_text)
+            memory_service.add_message(
+                session_id,
+                "assistant",
+                ai_text,
+            )
 
             asyncio.run(tts_service.text_to_speech(ai_text))
+
+            logger.info("LLM response generated successfully")
 
             return ai_text
 
         except Exception as e:
+            logger.error(f"LLM generation failed: {e}")
+
             error_text = str(e)
 
-            if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
-                return "Gemini quota is currently exhausted. Please try again later."
+            if (
+                "429" in error_text
+                or "RESOURCE_EXHAUSTED" in error_text
+            ):
+                return (
+                    "Gemini quota is currently exhausted. "
+                    "Please try again later."
+                )
 
-            if "503" in error_text or "UNAVAILABLE" in error_text:
-                return "Gemini is temporarily unavailable. Please try again later."
+            if (
+                "503" in error_text
+                or "UNAVAILABLE" in error_text
+            ):
+                return (
+                    "Gemini is temporarily unavailable. "
+                    "Please try again later."
+                )
 
             return "Sorry, something went wrong while generating a response."
 

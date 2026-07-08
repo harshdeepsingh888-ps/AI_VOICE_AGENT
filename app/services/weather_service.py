@@ -1,37 +1,60 @@
-import os
 import requests
-from dotenv import load_dotenv
 
-load_dotenv()
+from app.core.config import settings
+from app.utils.logger import setup_logger
+
+
+logger = setup_logger("weather_service")
 
 
 class WeatherService:
     def __init__(self):
-        self.api_key = os.getenv("OPENWEATHER_API_KEY")
-        self.base_url = "https://api.openweathermap.org/data/2.5/weather"
+        self.api_key = settings.OPENWEATHER_API_KEY
+        self.base_url = (
+            "https://api.openweathermap.org/data/2.5/weather"
+        )
 
     def get_weather(self, city: str):
+        logger.info(f"Fetching weather for '{city}'")
+
         if not self.api_key:
+            logger.error("OpenWeather API key is missing.")
+
             return {
                 "success": False,
-                "error": "OpenWeather API key is missing."
+                "error": "OpenWeather API key is missing.",
             }
 
         try:
             params = {
                 "q": city,
                 "appid": self.api_key,
-                "units": "metric"
+                "units": "metric",
             }
 
-            response = requests.get(self.base_url, params=params, timeout=10)
+            response = requests.get(
+                self.base_url,
+                params=params,
+                timeout=10,
+            )
+
             data = response.json()
 
             if response.status_code != 200:
+                logger.warning(
+                    f"Weather lookup failed for '{city}': "
+                    f"{data.get('message')}"
+                )
+
                 return {
                     "success": False,
-                    "error": data.get("message", "Unable to fetch weather.")
+                    "error": data.get(
+                        "message",
+                        "Unable to fetch weather.",
+                    ),
                 }
+
+            logger.info(f"Weather fetched successfully for '{city}'")
 
             return {
                 "success": True,
@@ -42,10 +65,20 @@ class WeatherService:
                 "humidity": data["main"]["humidity"],
             }
 
-        except Exception as e:
+        except requests.RequestException as e:
+            logger.exception("Weather API request failed")
+
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+            }
+
+        except Exception as e:
+            logger.exception("Unexpected weather service error")
+
+            return {
+                "success": False,
+                "error": str(e),
             }
 
 

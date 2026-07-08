@@ -1,25 +1,44 @@
-
 import whisper
 
+from app.utils.logger import setup_logger
 from app.services.recorder import Recorder
 
-# Load Whisper only once
+
+logger = setup_logger("speech_service")
+
+# Load Whisper model once when the application starts
+logger.info("Loading Whisper model...")
 model = whisper.load_model("base")
+logger.info("Whisper model loaded successfully.")
 
 recorder = Recorder()
 
 
-def transcribe_audio(filename="recording.wav"):
-    print("📝 Transcribing...")
+def transcribe_audio(filename: str = "recording.wav") -> str:
+    logger.info(f"Transcribing audio: {filename}")
 
-    result = model.transcribe(filename, language="en")
+    try:
+        result = model.transcribe(
+            filename,
+            language="en",
+        )
 
-    print(f"🗣️ You said: {result['text']}")
+        text = result["text"].strip()
 
-    return result["text"]
+        logger.info(f"Transcription: {text}")
+
+        return text
+
+    except Exception as e:
+        logger.exception("Speech transcription failed.")
+        raise e
 
 
-def listen():
+def listen() -> str:
+    logger.info("Waiting for user speech...")
+
     recorder.wait_for_speech()
-    text = transcribe_audio()
-    return text
+
+    logger.info("Speech detected.")
+
+    return transcribe_audio()
